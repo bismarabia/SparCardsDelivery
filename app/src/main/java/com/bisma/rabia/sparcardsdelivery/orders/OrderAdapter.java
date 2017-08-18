@@ -1,6 +1,8 @@
 package com.bisma.rabia.sparcardsdelivery.orders;
 
 import android.content.Context;
+import android.content.Intent;
+import android.graphics.Color;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -9,6 +11,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.bisma.rabia.sparcardsdelivery.R;
+import com.bisma.rabia.sparcardsdelivery.scan.ScanItems;
 
 import java.util.List;
 
@@ -17,14 +20,13 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
 
     private static List<Order> purchaseList;
     private Context context;
-    private AdapterCallback adapterCallback;
 
     static class FoodViewHolder extends RecyclerView.ViewHolder {
 
         CardView order_cv;
         TextView orderName, orderQuantity, orderStartDate, orderFinishDate, orderCategory;
 
-        FoodViewHolder(View itemView) {
+        FoodViewHolder(final View itemView) {
             super(itemView);
             order_cv = (CardView) itemView.findViewById(R.id.order_cv);
             this.orderName = (TextView) itemView.findViewById(R.id.order_name);
@@ -32,14 +34,20 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
             this.orderStartDate = (TextView) itemView.findViewById(R.id.order_start_time);
             this.orderFinishDate = (TextView) itemView.findViewById(R.id.order_finish_time);
             this.orderCategory = (TextView) itemView.findViewById(R.id.order_category);
+            itemView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    view.getContext().startActivity(new Intent(view.getContext(), ScanItems.class));
+                }
+            });
         }
+
 
     }
 
-    OrderAdapter(List<Order> purchaseList, Context context, AdapterCallback adapterCallback) {
+    OrderAdapter(List<Order> purchaseList, Context context) {
         OrderAdapter.purchaseList = purchaseList;
         this.context = context;
-        this.adapterCallback = adapterCallback;
     }
 
     @Override
@@ -55,18 +63,16 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
     @Override
     public void onBindViewHolder(final FoodViewHolder foodViewHolder, final int position) {
         foodViewHolder.orderName.setText(purchaseList.get(position).getOrderName());
-        foodViewHolder.orderQuantity.setText(purchaseList.get(position).getOrderQuantity());
+        foodViewHolder.orderQuantity.setText("Quantity: " + purchaseList.get(position).getOrderQuantity());
         foodViewHolder.orderCategory.setText(purchaseList.get(position).getOrderCategory());
-        foodViewHolder.orderStartDate.setText(purchaseList.get(position).getOrderStartDate());
-        foodViewHolder.orderFinishDate.setText(purchaseList.get(position).getOrderFinishDate());
+        foodViewHolder.orderStartDate.setText("Starting time: "+purchaseList.get(position).getOrderStartDate());
+        foodViewHolder.orderFinishDate.setText("Ending time: "+purchaseList.get(position).getOrderFinishDate());
+
+
 
         // on click
     }
 
-    void deleteAll() {
-        purchaseList.clear();
-        //PurchaseHistoryRV.recyclerViewPH.getAdapter().notifyDataSetChanged();
-    }
 
     @Override
     public int getItemCount() {

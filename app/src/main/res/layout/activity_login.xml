@@ -40,7 +40,7 @@
         <EditText
             android:id="@+id/username"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="50dp"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:layout_marginTop="10dp"
@@ -50,16 +50,16 @@
             android:drawableStart="@drawable/user"
             android:ellipsize="end"
             android:ems="10"
+            android:hint="username"
             android:inputType="textPersonName"
             android:paddingBottom="08dp"
-            android:text="lipica"
             android:textColor="@android:color/black"
             android:textColorHint="#858585" />
 
         <EditText
             android:id="@+id/password"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="50dp"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:layout_marginTop="10dp"
@@ -69,16 +69,16 @@
             android:drawableStart="@drawable/locked"
             android:ellipsize="end"
             android:ems="10"
+            android:hint="password"
             android:inputType="textPassword"
             android:paddingBottom="08dp"
-            android:text="liprtSEw"
             android:textColor="@android:color/black"
             android:textColorHint="#858585" />
 
         <Button
             android:id="@+id/login_btn"
             android:layout_width="match_parent"
-            android:layout_height="40dp"
+            android:layout_height="50dp"
             android:layout_marginLeft="10dp"
             android:layout_marginRight="10dp"
             android:layout_marginTop="30dp"
