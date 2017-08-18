@@ -2,7 +2,7 @@
 <android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="#c9c9c9"
+    android:background="#e5e5e5"
     android:padding="5dp">
 
     <android.support.v7.widget.RecyclerView

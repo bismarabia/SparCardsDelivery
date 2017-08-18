@@ -5,15 +5,23 @@ import android.support.annotation.IntegerRes;
 import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
+import android.view.KeyEvent;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.TextView;
 
 import com.bisma.rabia.sparcardsdelivery.R;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 public class ScanItems extends AppCompatActivity {
 
     TextView no_cards, status, barcode;
+
+    List<String> barcodeList = new ArrayList<>();
+    List<String> masterCodeList = new ArrayList<>();
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -21,9 +29,11 @@ public class ScanItems extends AppCompatActivity {
         setContentView(R.layout.scan_items);
 
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setHomeButtonEnabled(true);
-        actionBar.setDisplayHomeAsUpEnabled(true);
-        actionBar.setTitle("SCAN ITEMS");
+        if (actionBar != null) {
+            actionBar.setHomeButtonEnabled(true);
+            actionBar.setDisplayHomeAsUpEnabled(true);
+            actionBar.setTitle("SCAN ITEMS");
+        }
 
         no_cards = (TextView) findViewById(R.id.no_cards_et);
         status = (TextView) findViewById(R.id.status_et);
@@ -37,5 +47,29 @@ public class ScanItems extends AppCompatActivity {
             }
         });
 
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+
+        if ((keyCode == 139))
+            if ((event.getRepeatCount() == 0)) {
+                int count = Integer.valueOf(no_cards.getText().toString());
+                no_cards.setText(String.valueOf((++count)));
+                return true;
+            }
+
+        return super.onKeyDown(keyCode, event);
     }
 }

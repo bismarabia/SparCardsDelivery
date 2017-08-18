@@ -21,8 +21,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:enabled="false"
                 android:padding="0dp"
-                android:text="N° of Cards" />
+                android:text="N° of Cards"
+                android:textColor="#000000" />
 
             <TextView
                 android:id="@+id/no_cards_et"
@@ -32,6 +34,7 @@
                 android:gravity="center"
                 android:padding="0dp"
                 android:text="0"
+                android:textColor="#000000"
                 android:textSize="20sp" />
 
         </TableRow>
@@ -48,8 +51,10 @@
                 android:layout_width="wrap_content"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
+                android:enabled="false"
                 android:padding="0dp"
-                android:text="Status" />
+                android:text="Status"
+                android:textColor="#000000" />
 
             <TextView
                 android:id="@+id/status_et"
@@ -59,6 +64,7 @@
                 android:gravity="center"
                 android:padding="0dp"
                 android:text=""
+                android:textColor="#000000"
                 android:textSize="20sp" />
 
         </TableRow>
@@ -75,7 +81,9 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="barcode" />
+                android:enabled="false"
+                android:text="barcode"
+                android:textColor="#000000" />
 
             <TextView
                 android:id="@+id/barcode_et"
@@ -85,6 +93,7 @@
                 android:gravity="center"
                 android:padding="0dp"
                 android:text=""
+                android:textColor="#000000"
                 android:textSize="20sp" />
 
         </TableRow>
@@ -96,8 +105,9 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="80dp"
         android:layout_marginStart="80dp"
-        android:layout_marginTop="70dp"
+        android:layout_marginTop="80dp"
         android:background="@drawable/shape_button"
+        android:textSize="20sp"
         android:text="scan" />
 
 </LinearLayout>
