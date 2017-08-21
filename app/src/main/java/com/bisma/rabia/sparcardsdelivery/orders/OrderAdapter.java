@@ -12,6 +12,7 @@ import android.widget.TextView;
 
 import com.bisma.rabia.sparcardsdelivery.R;
 import com.bisma.rabia.sparcardsdelivery.scan.ScanItems;
+import com.bisma.rabia.sparcardsdelivery.model.response.connect.Order;
 
 import java.util.List;
 
@@ -47,8 +48,8 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
 
     }
 
-    OrderAdapter(List<Order> purchaseList, Context context) {
-        OrderAdapter.ordersList = purchaseList;
+    OrderAdapter(List<Order> orders, Context context) {
+        OrderAdapter.ordersList = orders;
         this.context = context;
     }
 
@@ -64,15 +65,16 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
 
     @Override
     public void onBindViewHolder(final FoodViewHolder foodViewHolder, final int position) {
-        foodViewHolder.orderName.setText(ordersList.get(position).getOrderName());
-        foodViewHolder.orderQuantity.setText("Quantity: " + ordersList.get(position).getOrderQuantity());
-        foodViewHolder.orderCategory.setText(ordersList.get(position).getOrderCategory());
-        foodViewHolder.orderStartDate.setText("Starting time:  " + ordersList.get(position).getOrderStartDate());
-        foodViewHolder.orderFinishDate.setText("Ending time: " + ordersList.get(position).getOrderFinishDate());
+        foodViewHolder.orderName.setText(ordersList.get(position).getName());
+        foodViewHolder.orderQuantity.setText("Quantity: " + ordersList.get(position).getQuantity());
+        foodViewHolder.orderCategory.setText(ordersList.get(position).getCategory() + "€");
+        foodViewHolder.orderStartDate.setText("Starting time:  " + ordersList.get(position).getStart());
+        foodViewHolder.orderFinishDate.setText("Ending time: " + ordersList.get(position).getEnd());
 
-        if (ordersList.get(position).getOrderName().equals("Z1")) {
+        if (ordersList.get(position).getCompleted() == 0) {
             foodViewHolder.task_status.setImageResource(R.drawable.in_progress1);
-        }
+        } else
+            foodViewHolder.task_status.setImageResource(R.drawable.order_done);
 
         // on click
     }

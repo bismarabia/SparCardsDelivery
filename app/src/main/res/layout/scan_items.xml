@@ -3,31 +3,12 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:gravity="center"
-
     android:orientation="vertical">
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginEnd="20dp"
-        android:layout_marginStart="20dp"
-        android:orientation="vertical">
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="number" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="0" />
-
-    </LinearLayout>
 
     <TableLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
+
         <TableRow
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -91,36 +72,42 @@
         </TableRow>
 
         <TableRow
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginEnd="20dp"
             android:layout_marginStart="20dp"
-            android:orientation="horizontal"
-            android:padding="0dp">
+            android:layout_marginTop="20dp"
+            android:orientation="horizontal">
 
             <Button
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:enabled="false"
-                android:text="barcode"
-                android:layout_column="0"
+                android:text="Barcode"
                 android:textColor="#000000" />
 
-            <TextView
+        </TableRow>
+
+        <LinearLayout
+            android:layout_marginEnd="20dp"
+            android:layout_marginStart="20dp"
+            android:orientation="vertical">
+
+            <EditText
                 android:id="@+id/barcode_et"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="match_parent"
-                android:layout_weight="5"
                 android:gravity="center"
-                android:layout_span="1"
-                android:padding="0dp"
+                android:inputType="textMultiLine"
+                android:labelFor="@+id/barcode_et"
                 android:text=""
                 android:textColor="#000000"
                 android:textSize="20sp" />
+        </LinearLayout>
 
-        </TableRow>
     </TableLayout>
+
 
     <Button
         android:id="@+id/scan_btn"
@@ -131,7 +118,8 @@
         android:layout_marginTop="80dp"
         android:background="@drawable/shape_button"
         android:text="scan"
-        android:textSize="20sp" />
+        android:textSize="20sp"
+        android:textStyle="bold" />
 
     <Button
         android:id="@+id/clear_btn"
@@ -142,7 +130,6 @@
         android:layout_marginTop="15dp"
         android:background="@drawable/shape_button"
         android:text="clear"
-        android:textColor="#e1ff00"
         android:textSize="20sp"
         android:textStyle="bold" />
 

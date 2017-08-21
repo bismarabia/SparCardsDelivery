@@ -53,6 +53,7 @@
             android:hint="username"
             android:inputType="textPersonName"
             android:paddingBottom="08dp"
+            android:text="test"
             android:textColor="@android:color/black"
             android:textColorHint="#858585" />
 
@@ -72,6 +73,7 @@
             android:hint="password"
             android:inputType="textPassword"
             android:paddingBottom="08dp"
+            android:text="test112358"
             android:textColor="@android:color/black"
             android:textColorHint="#858585" />
 

@@ -11,6 +11,7 @@ import android.view.KeyEvent;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,11 +26,13 @@ import java.util.concurrent.Executors;
 
 public class ScanItems extends AppCompatActivity {
 
-    TextView no_cards, status, barcode;
+    TextView no_cards, status;
+    EditText barcode;
     Button scan_btn, clear_btn;
 
-    List<String> barcodeList = new ArrayList<>();
-    List<String> masterCodeList = new ArrayList<>();
+    List<String> barcodeList = new ArrayList<>(),
+            barcodeListSoFar = new ArrayList<>(),
+            masterCodeList = new ArrayList<>();
 
     public Barcode2DWithSoft scanner2D;
     ExecutorService executor;
@@ -51,7 +54,7 @@ public class ScanItems extends AppCompatActivity {
 
         no_cards = (TextView) findViewById(R.id.no_cards_et);
         status = (TextView) findViewById(R.id.status_et);
-        barcode = (TextView) findViewById(R.id.barcode_et);
+        barcode = (EditText) findViewById(R.id.barcode_et);
 
         try {
             scanner2D = Barcode2DWithSoft.getInstance();
@@ -106,7 +109,7 @@ public class ScanItems extends AppCompatActivity {
 
         } else {
             scan_btn.setText("SCAN");
-            scanner2D.stopScan();
+            scanner2D.close();
             clear_btn.setEnabled(true);
             threadStop = true;
         }
@@ -158,10 +161,12 @@ public class ScanItems extends AppCompatActivity {
 
             String barCode = new String(data);
 
-            int count = Integer.valueOf(no_cards.getText().toString());
-            no_cards.setText(String.valueOf((++count)));
-
-            barcode.setText(barCode);
+            if (!barcodeListSoFar.contains(barCode)) {
+                int count = Integer.valueOf(no_cards.getText().toString());
+                no_cards.setText(String.valueOf((++count)));
+                barcode.setText(barCode);
+                barcodeListSoFar.add(barCode);
+            }
 
         }
     };

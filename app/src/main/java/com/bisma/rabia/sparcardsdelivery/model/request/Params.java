@@ -15,6 +15,11 @@ public class Params {
         this.auth = auth;
     }
 
+    public Params(String username, String password) {
+        this.username = username;
+        this.password = password;
+    }
+
     public Params(String token) {
         this.token = token;
     }
