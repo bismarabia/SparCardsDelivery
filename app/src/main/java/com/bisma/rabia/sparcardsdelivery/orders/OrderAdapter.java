@@ -83,7 +83,4 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
         return ordersList.size();
     }
 
-    public static interface AdapterCallback {
-
-    }
 }
