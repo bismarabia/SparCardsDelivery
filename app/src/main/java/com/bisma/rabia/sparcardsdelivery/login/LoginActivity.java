@@ -3,6 +3,7 @@ package com.bisma.rabia.sparcardsdelivery.login;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -58,7 +59,7 @@ public class LoginActivity extends AppCompatActivity {
         });
     }
 
-    void connect(String username, String password) {
+    void connect(final String username, String password) {
         OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder();
         HttpLoggingInterceptor login = new HttpLoggingInterceptor();
         login.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -82,8 +83,8 @@ public class LoginActivity extends AppCompatActivity {
                     ordersList = response.body().getOrders();
                     Gson gson = new Gson();
                     SharedPreferences.Editor editor = prefDataConnect.edit();
+                    editor.putString("username", username);
                     editor.putString("orders_list", gson.toJson(ordersList));
-                    Toast.makeText(getApplicationContext(), "size before: " + ordersList.size(), Toast.LENGTH_SHORT).show();
                     editor.apply();
 
                     startActivity(new Intent(getApplicationContext(), OrderRV.class));
@@ -97,4 +98,6 @@ public class LoginActivity extends AppCompatActivity {
             }
         });
     }
+
+
 }

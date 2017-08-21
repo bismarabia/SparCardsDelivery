@@ -5,6 +5,15 @@
     android:gravity="center"
     android:orientation="vertical">
 
+    <TextView
+        android:id="@+id/msg_status"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="30dp"
+        android:text="****/****"
+        android:textColor="#dc0007"
+        android:textSize="25sp" />
+
     <TableLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
@@ -65,8 +74,8 @@
                 android:layout_weight="5"
                 android:gravity="center"
                 android:padding="0dp"
-                android:text=""
-                android:textColor="#000000"
+                android:text="Perfect"
+                android:textColor="#1ecc00"
                 android:textSize="20sp" />
 
         </TableRow>
@@ -115,7 +124,7 @@
         android:layout_height="wrap_content"
         android:layout_marginEnd="80dp"
         android:layout_marginStart="80dp"
-        android:layout_marginTop="80dp"
+        android:layout_marginTop="50dp"
         android:background="@drawable/shape_button"
         android:text="scan"
         android:textSize="20sp"
