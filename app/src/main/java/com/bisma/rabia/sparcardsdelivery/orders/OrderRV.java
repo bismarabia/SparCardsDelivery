@@ -2,6 +2,7 @@ package com.bisma.rabia.sparcardsdelivery.orders;
 
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
@@ -9,9 +10,13 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.Menu;
+import android.view.MenuItem;
 
 import com.bisma.rabia.sparcardsdelivery.R;
+import com.bisma.rabia.sparcardsdelivery.login.LoginActivity;
 import com.bisma.rabia.sparcardsdelivery.model.response.connect.Order;
+import com.bisma.rabia.sparcardsdelivery.scan.ScanItems;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
@@ -25,9 +30,6 @@ public class OrderRV extends AppCompatActivity {
     OrderAdapter orderAdapter;
 
     SharedPreferences prefDataConnect;
-
-
-
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -57,4 +59,23 @@ public class OrderRV extends AppCompatActivity {
 
     }
 
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case android.R.id.home:
+                onBackPressed();
+                return true;
+            case R.id.action_sign_out:
+                startActivity(new Intent(OrderRV.this, LoginActivity.class));
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
 }

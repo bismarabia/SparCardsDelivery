@@ -2,6 +2,7 @@ package com.bisma.rabia.sparcardsdelivery.scan;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.media.AudioAttributes;
@@ -15,6 +16,7 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.KeyEvent;
+import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -23,6 +25,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bisma.rabia.sparcardsdelivery.R;
+import com.bisma.rabia.sparcardsdelivery.login.LoginActivity;
 import com.bisma.rabia.sparcardsdelivery.model.request.Params;
 import com.bisma.rabia.sparcardsdelivery.model.request.Request;
 import com.bisma.rabia.sparcardsdelivery.model.request.RequestClient;
@@ -32,6 +35,8 @@ import com.bisma.rabia.sparcardsdelivery.model.request.CardToSet;
 import com.bisma.rabia.sparcardsdelivery.model.response.setCard.SetCards;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
+import com.rscja.deviceapi.Barcode1D;
+import com.rscja.deviceapi.exception.ConfigurationException;
 import com.zebra.adc.decoder.Barcode2DWithSoft;
 
 import java.text.SimpleDateFormat;
@@ -63,6 +68,7 @@ public class ScanItems extends AppCompatActivity {
     List<MasterBarCode> masterCardsList = new ArrayList<>();
     HashMap<String, String> cardMap = new HashMap<>(), sellingEANMap = new HashMap<>();
 
+    static boolean isBarcode1D = false, isBarcode2D = false;
     public Barcode2DWithSoft scanner2D;
     private boolean threadStop = true;
     private Thread thread;
@@ -71,7 +77,8 @@ public class ScanItems extends AppCompatActivity {
 
     private SoundPool soundPool;
     private int soundIDGreenFlag, soundIDRedFlag;
-    boolean soundLoaded = false;
+    private Barcode1D mInstance;
+    private String barCode1D;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -97,13 +104,19 @@ public class ScanItems extends AppCompatActivity {
         status = (TextView) findViewById(R.id.status_et);
         barcode = (EditText) findViewById(R.id.barcode_et);
 
+        try {
+            mInstance = Barcode1D.getInstance();
+        } catch (ConfigurationException e) {
+            e.printStackTrace();
+        }
+        isBarcode1D = mInstance.open();
 
         try {
             scanner2D = Barcode2DWithSoft.getInstance();
         } catch (Exception e) {
             Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
         }
-
+        isBarcode2D = scanner2D.open(ScanItems.this);
 
         scan_btn = (Button) findViewById(R.id.scan_btn);
         scan_btn.setOnClickListener(new View.OnClickListener() {
@@ -151,35 +164,42 @@ public class ScanItems extends AppCompatActivity {
 
     private void scan() {
 
-        if (scanner2D != null)
-            scanner2D.setScanCallback(mScanCallback);
+        if (isBarcode2D) {
+            Log.i("2D Scanner == ", "will be used");
+            if (scanner2D != null)
+                scanner2D.setScanCallback(mScanCallback);
 
-        if (threadStop) {
-            int iBetween;
+            if (threadStop) {
+                int iBetween;
 
-            scan_btn.setText("STOP");
-            threadStop = false;
+                scan_btn.setText("STOP");
+                threadStop = false;
 
-            iBetween = 1500;
+                iBetween = 1500;
 
-            clear_btn.setEnabled(false);
+                clear_btn.setEnabled(false);
 
-            thread = new DecodeThread(true, iBetween);
-            thread.start();
-        } else {
-            scan_btn.setText("SCAN");
-            scanner2D.close();
-            clear_btn.setEnabled(true);
-            threadStop = true;
-            boolean result;
-            if (scanner2D != null) {
-                result = scanner2D.open(ScanItems.this);
-                if (result) {
-                    scanner2D.setParameter(324, 1);
-                    scanner2D.setParameter(300, 0); // Snapshot Aiming
-                    scanner2D.setParameter(361, 0); // Image Capture Illumination
+                thread = new DecodeThread(true, iBetween);
+                thread.start();
+            } else {
+                scan_btn.setText("SCAN");
+                scanner2D.close();
+                clear_btn.setEnabled(true);
+                threadStop = true;
+                boolean result;
+                if (scanner2D != null) {
+                    result = scanner2D.open(ScanItems.this);
+                    if (result) {
+                        scanner2D.setParameter(324, 1);
+                        scanner2D.setParameter(300, 0); // Snapshot Aiming
+                        scanner2D.setParameter(361, 0); // Image Capture Illumination
+                    }
                 }
             }
+        } else {
+            Log.i("1D Scanner == ", "will be used");
+            barCode1D = mInstance.scan();
+            updateUI(barCode1D);
         }
     }
 
@@ -226,6 +246,7 @@ public class ScanItems extends AppCompatActivity {
             msg_status.setTextColor(Color.rgb(220, 0, 7));      // color == red
             msg_status.setText("Scan The Package First");
             status.setText("");
+
             /*
             *   counter == 0  >> Nothing is scanned, package is to be scanned first
             *   counter == 1  >> Package is scanned, and the card has to be scanned next, when Card is scanned,
@@ -236,89 +257,93 @@ public class ScanItems extends AppCompatActivity {
             *                       counter = 2
             */
 
-            if (counter == 0) {
-                msg_status.setText("Package Scanned...Scan The Card");
-                barcodePackaging = barCode;
-                counter++;
-                status.setText("");
-            } else if (counter == 1) {
-                barcodeCard = barCode;
-
-                Log.i("scanned Package == ", barcodePackaging);
-                Log.i("scanned Card == ", barcodeCard);
-
-                if (barcodeCard.equals(cardMap.get(barcodePackaging))) {
-                    CardToSet cardScanned = new CardToSet(
-                            username,
-                            new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(Calendar.getInstance().getTime()),
-                            sellingEANMap.get(barcodePackaging),
-                            barcodePackaging,
-                            cardMap.get(barcodePackaging),
-                            1);
-                    cardsScannedList.add(cardScanned);
-                    cardScannedCounter++;
-                    counter = 0;
-                    Log.i("status == ", "Perfect, found match");
-                    int count = Integer.valueOf(no_cards.getText().toString());         // increment card scanned count
-                    no_cards.setText(String.valueOf((++count)));                        // set the count to textView
-
-                    status.setTextColor(Color.rgb(30, 204, 0));             // color == green
-                    status.setText("Perfect");
-                    soundPool.play(soundIDGreenFlag, 0.9f, 0.9f, 1, 0, 1);
-                    // change 2 it to box_quantity
-                    if (cardScannedCounter == 2) {                          // all cards along their package are scanned in one box
-                        counter = 2;                                        // counter = 2 so we can scan master code
-                        msg_status.setTextColor(Color.rgb(17, 187, 255));   // color == blue
-                        msg_status.setText("Scan the MasterCode");
-                    } else {
-                        msg_status.setTextColor(Color.rgb(220, 0, 7));          // color == red
-                        msg_status.setText("Scan another Package..");
-                    }
-                } else {
-                    Log.i("status == ", "Package's and Card's barcode are a mismatch..");
-                    status.setTextColor(Color.rgb(220, 0, 7));      // color == red
-                    status.setText("Mismatch");
-                    counter = 0;
-                    soundPool.play(soundIDRedFlag, 0.9f, 0.9f, 1, 0, 1);
-                }
-
-
-            } else if (counter == 2) {  // package's and card's code scanned properly, now it's time to scan master code
-                for (int j = 0; j < masterCardsList.size(); j++) {
-                    if (masterCardsList.get(j).getMassActivationEAN().equals(barCode)) {    // masterCode found
-                        Log.i("status == ", "Perfect, Master found match");
-                        Log.i("cardScanned size == ", "" + cardsScannedList.size());
-                        setCards(new Request(new Params(order_id, masterCardsList.get(j).getMassActivationEAN(), cardsScannedList)));
-                        counter = 0;
-                        cardScannedCounter = 0;
-                        soundPool.play(soundIDGreenFlag, 0.9f, 0.9f, 1, 0, 1);
-
-                        clear();
-                        scanner2D.close();
-                        clear_btn.setEnabled(true);
-                        boolean result;
-                        if (scanner2D != null) {
-                            result = scanner2D.open(ScanItems.this);
-                            if (result) {
-                                scanner2D.setParameter(324, 1);
-                                scanner2D.setParameter(300, 0); // Snapshot Aiming
-                                scanner2D.setParameter(361, 0); // Image Capture Illumination
-                            }
-                        }
-                    }
-                }
-                if (counter == 2) {      // The masterCode scanned doesn't exist
-                    status.setTextColor(Color.rgb(220, 0, 7));          // color == red
-                    status.setText("Master Code Not Found!!");
-                    msg_status.setTextColor(Color.rgb(220, 0, 7));      // color == red
-                    msg_status.setText("Find another valid MasterCode..");
-                    soundPool.play(soundIDRedFlag, 0.9f, 0.9f, 1, 0, 1);
-                    // counter will stay 2 so we can start scanning other master code
-                }
-            }
+            updateUI(barCode);
 
         }
     };
+
+    void updateUI(String barCode) {
+        if (counter == 0) {
+            msg_status.setText("Package Scanned...Scan The Card");
+            barcodePackaging = barCode;
+            counter++;
+            status.setText("");
+        } else if (counter == 1) {
+            barcodeCard = barCode;
+
+            Log.i("scanned Package == ", barcodePackaging);
+            Log.i("scanned Card == ", barcodeCard);
+
+            if (barcodeCard.equals(cardMap.get(barcodePackaging))) {
+                CardToSet cardScanned = new CardToSet(
+                        username,
+                        new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(Calendar.getInstance().getTime()),
+                        sellingEANMap.get(barcodePackaging),
+                        barcodePackaging,
+                        cardMap.get(barcodePackaging),
+                        1);
+                cardsScannedList.add(cardScanned);
+                cardScannedCounter++;
+                counter = 0;
+                Log.i("status == ", "Perfect, found match");
+                int count = Integer.valueOf(no_cards.getText().toString());         // increment card scanned count
+                no_cards.setText(String.valueOf((++count)));                        // set the count to textView
+
+                status.setTextColor(Color.rgb(30, 204, 0));             // color == green
+                status.setText("Perfect");
+                soundPool.play(soundIDGreenFlag, 0.9f, 0.9f, 1, 0, 1);
+                // change 2 it to box_quantity
+                if (cardScannedCounter == 2) {                          // all cards along their package are scanned in one box
+                    counter = 2;                                        // counter = 2 so we can scan master code
+                    msg_status.setTextColor(Color.rgb(17, 187, 255));   // color == blue
+                    msg_status.setText("Scan the MasterCode");
+                } else {
+                    msg_status.setTextColor(Color.rgb(220, 0, 7));          // color == red
+                    msg_status.setText("Scan another Package..");
+                }
+            } else {
+                Log.i("status == ", "Package's and Card's barcode are a mismatch..");
+                status.setTextColor(Color.rgb(220, 0, 7));      // color == red
+                status.setText("Mismatch");
+                counter = 0;
+                soundPool.play(soundIDRedFlag, 0.9f, 0.9f, 1, 0, 1);
+            }
+
+
+        } else if (counter == 2) {  // package's and card's code scanned properly, now it's time to scan master code
+            for (int j = 0; j < masterCardsList.size(); j++) {
+                if (masterCardsList.get(j).getMassActivationEAN().equals(barCode)) {    // masterCode found
+                    Log.i("status == ", "Perfect, Master found match");
+                    Log.i("cardScanned size == ", "" + cardsScannedList.size());
+                    setCards(new Request(new Params(order_id, masterCardsList.get(j).getMassActivationEAN(), cardsScannedList)));
+                    counter = 0;
+                    cardScannedCounter = 0;
+                    soundPool.play(soundIDGreenFlag, 0.9f, 0.9f, 1, 0, 1);
+
+                    clear();
+                    scanner2D.close();
+                    clear_btn.setEnabled(true);
+                    boolean result;
+                    if (scanner2D != null) {
+                        result = scanner2D.open(ScanItems.this);
+                        if (result) {
+                            scanner2D.setParameter(324, 1);
+                            scanner2D.setParameter(300, 0); // Snapshot Aiming
+                            scanner2D.setParameter(361, 0); // Image Capture Illumination
+                        }
+                    }
+                }
+            }
+            if (counter == 2) {      // The masterCode scanned doesn't exist
+                status.setTextColor(Color.rgb(220, 0, 7));          // color == red
+                status.setText("Master Code Not Found!!");
+                msg_status.setTextColor(Color.rgb(220, 0, 7));      // color == red
+                msg_status.setText("Find another valid MasterCode..");
+                soundPool.play(soundIDRedFlag, 0.9f, 0.9f, 1, 0, 1);
+                // counter will stay 2 so we can start scanning other master code
+            }
+        }
+    }
 
     private class InitTask extends AsyncTask<String, Integer, Boolean> {
         ProgressDialog mypDialog;
@@ -411,11 +436,19 @@ public class ScanItems extends AppCompatActivity {
     }
 
     @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
             case android.R.id.home:
                 onBackPressed();
                 return true;
+            case R.id.action_sign_out:
+                startActivity(new Intent(ScanItems.this, LoginActivity.class));
         }
 
         return super.onOptionsItemSelected(item);

@@ -120,7 +120,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
 
     @Override
     public int getItemCount() {
-        return ordersList.size();
+        return ordersList != null ? ordersList.size() : 0;
     }
 
     private RequestClient getClient() {
