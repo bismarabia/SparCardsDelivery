@@ -9,31 +9,14 @@ import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.widget.Toast;
 
 import com.bisma.rabia.sparcardsdelivery.R;
-import com.bisma.rabia.sparcardsdelivery.model.request.Params;
-import com.bisma.rabia.sparcardsdelivery.model.request.User;
-import com.bisma.rabia.sparcardsdelivery.model.request.UserClient;
-import com.bisma.rabia.sparcardsdelivery.model.response.cards.Card;
-import com.bisma.rabia.sparcardsdelivery.model.response.cards.GetCards;
-import com.bisma.rabia.sparcardsdelivery.model.response.connect.ConnectGetOrder;
 import com.bisma.rabia.sparcardsdelivery.model.response.connect.Order;
-import com.bisma.rabia.sparcardsdelivery.model.response.masetCards.GetMasterBarCodes;
-import com.bisma.rabia.sparcardsdelivery.model.response.masetCards.MasterBarCode;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import okhttp3.OkHttpClient;
-import okhttp3.logging.HttpLoggingInterceptor;
-import retrofit2.Call;
-import retrofit2.Callback;
-import retrofit2.Response;
-import retrofit2.Retrofit;
-import retrofit2.converter.gson.GsonConverterFactory;
 
 public class OrderRV extends AppCompatActivity {
 

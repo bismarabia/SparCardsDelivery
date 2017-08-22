@@ -18,6 +18,9 @@ public class Order {
     @SerializedName("quantity")
     @Expose
     private Integer quantity;
+    @SerializedName("box_quantity")
+    @Expose
+    private Integer box_quantity;
     @SerializedName("category")
     @Expose
     private Integer category;
@@ -28,11 +31,12 @@ public class Order {
     @Expose
     private String end;
 
-    public Order(String name, Integer id, Integer completed, Integer quantity, Integer category, String start, String end) {
+    public Order(String name, Integer id, Integer completed, Integer quantity, Integer box_quantity, Integer category, String start, String end) {
         this.name = name;
         this.id = id;
         this.completed = completed;
         this.quantity = quantity;
+        this.box_quantity = box_quantity;
         this.category = category;
         this.start = start;
         this.end = end;
@@ -68,6 +72,14 @@ public class Order {
 
     public void setQuantity(Integer quantity) {
         this.quantity = quantity;
+    }
+
+    public Integer getBox_quantity() {
+        return box_quantity;
+    }
+
+    public void setBox_quantity(Integer box_quantity) {
+        this.box_quantity = box_quantity;
     }
 
     public Integer getCategory() {

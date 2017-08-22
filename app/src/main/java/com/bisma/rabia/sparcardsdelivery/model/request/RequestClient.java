@@ -8,21 +8,23 @@ import com.bisma.rabia.sparcardsdelivery.model.response.setCard.SetCards;
 
 import retrofit2.Call;
 import retrofit2.http.Body;
+import retrofit2.http.Headers;
 import retrofit2.http.POST;
 
-public interface UserClient {
+public interface RequestClient {
 
     @POST("/connect/")
-    Call<ConnectGetOrder> loginUser(@Body User user);
+    Call<ConnectGetOrder> loginUser(@Body Request request);
 
     @POST("/getMasterCodes/")
-    Call<GetMasterBarCodes> getMasterCards(@Body User user);
+    Call<GetMasterBarCodes> getMasterCards(@Body Request request);
 
-    @POST("/getCardToSets/")
-    Call<GetCards> getCards(@Body User user);
+    @POST("/getCards/")
+    Call<GetCards> getCards(@Body Request request);
 
-    @POST("/setCardToSets/")
-    Call<SetCards> setCards(@Body User user);
+    @Headers("Accept:application/json")
+    @POST("/setCards/")
+    Call<SetCards> setCards(@Body Request request);
 
 
 }

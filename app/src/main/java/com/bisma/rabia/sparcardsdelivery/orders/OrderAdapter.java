@@ -11,12 +11,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bisma.rabia.sparcardsdelivery.R;
 import com.bisma.rabia.sparcardsdelivery.model.request.Params;
-import com.bisma.rabia.sparcardsdelivery.model.request.User;
-import com.bisma.rabia.sparcardsdelivery.model.request.UserClient;
+import com.bisma.rabia.sparcardsdelivery.model.request.Request;
+import com.bisma.rabia.sparcardsdelivery.model.request.RequestClient;
 import com.bisma.rabia.sparcardsdelivery.model.response.cards.Card;
 import com.bisma.rabia.sparcardsdelivery.model.response.cards.GetCards;
 import com.bisma.rabia.sparcardsdelivery.model.response.masetCards.GetMasterBarCodes;
@@ -110,6 +109,10 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
                 getMasterCards(String.valueOf(ordersList.get(foodViewHolder.getAdapterPosition()).getId()));
                 foodViewHolder.itemView.getContext().startActivity(new Intent(
                         foodViewHolder.itemView.getContext(), ScanItems.class));
+                SharedPreferences.Editor editor = prefDataConnect.edit();
+                editor.putInt("order_id", ordersList.get(foodViewHolder.getAdapterPosition()).getId());
+                editor.putInt("order_box_quantity", ordersList.get(foodViewHolder.getAdapterPosition()).getBox_quantity());
+                editor.apply();
             }
         });
     }
@@ -120,7 +123,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
         return ordersList.size();
     }
 
-    private UserClient getClient() {
+    private RequestClient getClient() {
         OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder();
         HttpLoggingInterceptor login = new HttpLoggingInterceptor();
         login.setLevel(HttpLoggingInterceptor.Level.HEADERS);
@@ -132,19 +135,20 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
                 client(okHttpClientBuilder.build());
 
         Retrofit retrofit = builder.build();
-        return retrofit.create(UserClient.class);
+        return retrofit.create(RequestClient.class);
     }
 
     private void getCards(String id) {
-        User user = new User(new Params(id));
-        UserClient client = getClient();
+        Request request = new Request(new Params(id));
+        RequestClient client = getClient();
 
-        Call<GetCards> call = client.getCards(user);
+        Call<GetCards> call = client.getCards(request);
         call.enqueue(new Callback<GetCards>() {
             @Override
             public void onResponse(Call<GetCards> call, Response<GetCards> response) {
                 if (response.body() != null) {
                     cardsList = response.body().getCards();
+                    Log.i("card size ==", String.valueOf(cardsList.size()));
                     Gson gson = new Gson();
                     SharedPreferences.Editor editor = prefDataConnect.edit();
                     editor.putString("cards_list", gson.toJson(cardsList));
@@ -163,15 +167,16 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
 
     private void getMasterCards(String id) {
 
-        User user = new User(new Params(id));
-        UserClient client = getClient();
+        Request request = new Request(new Params(id));
+        RequestClient client = getClient();
 
-        Call<GetMasterBarCodes> call = client.getMasterCards(user);
+        Call<GetMasterBarCodes> call = client.getMasterCards(request);
         call.enqueue(new Callback<GetMasterBarCodes>() {
             @Override
             public void onResponse(Call<GetMasterBarCodes> call, Response<GetMasterBarCodes> response) {
                 if (response.body() != null) {
                     masterCardsList = response.body().getMasterBarCodes();
+                    Log.i("ms card size ==", String.valueOf(masterCardsList.size()));
                     Gson gson = new Gson();
                     SharedPreferences.Editor editor = prefDataConnect.edit();
                     editor.putString("master_cards_list", gson.toJson(masterCardsList));

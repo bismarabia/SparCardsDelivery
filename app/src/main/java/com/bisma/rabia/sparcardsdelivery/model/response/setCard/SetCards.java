@@ -1,21 +1,43 @@
 
 package com.bisma.rabia.sparcardsdelivery.model.response.setCard;
 
+import com.bisma.rabia.sparcardsdelivery.model.request.Params;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 
 public class SetCards {
 
-    @SerializedName("params")
+    @SerializedName("result")
     @Expose
-    private Params params;
+    private Result result;
+    @SerializedName("error")
+    @Expose
+    private String error;
+    @SerializedName("id")
+    @Expose
+    private String id;
 
-    public Params getParams() {
-        return params;
+    public Result getResult() {
+        return result;
     }
 
-    public void setParams(Params params) {
-        this.params = params;
+    public void setResult(Result result) {
+        this.result = result;
     }
 
+    public String getError() {
+        return error;
+    }
+
+    public void setError(String error) {
+        this.error = error;
+    }
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
 }

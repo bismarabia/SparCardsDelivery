@@ -2,10 +2,13 @@ package com.bisma.rabia.sparcardsdelivery.scan;
 
 import android.app.ProgressDialog;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
+import android.media.AudioAttributes;
+import android.media.AudioManager;
+import android.media.SoundPool;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v7.app.ActionBar;
@@ -20,16 +23,13 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.bisma.rabia.sparcardsdelivery.R;
-import com.bisma.rabia.sparcardsdelivery.login.LoginActivity;
 import com.bisma.rabia.sparcardsdelivery.model.request.Params;
-import com.bisma.rabia.sparcardsdelivery.model.request.User;
-import com.bisma.rabia.sparcardsdelivery.model.request.UserClient;
+import com.bisma.rabia.sparcardsdelivery.model.request.Request;
+import com.bisma.rabia.sparcardsdelivery.model.request.RequestClient;
 import com.bisma.rabia.sparcardsdelivery.model.response.cards.Card;
-import com.bisma.rabia.sparcardsdelivery.model.response.connect.ConnectGetOrder;
 import com.bisma.rabia.sparcardsdelivery.model.response.masetCards.MasterBarCode;
-import com.bisma.rabia.sparcardsdelivery.model.response.setCard.CardToSet;
+import com.bisma.rabia.sparcardsdelivery.model.request.CardToSet;
 import com.bisma.rabia.sparcardsdelivery.model.response.setCard.SetCards;
-import com.bisma.rabia.sparcardsdelivery.orders.OrderRV;
 import com.google.gson.Gson;
 import com.google.gson.reflect.TypeToken;
 import com.zebra.adc.decoder.Barcode2DWithSoft;
@@ -37,6 +37,7 @@ import com.zebra.adc.decoder.Barcode2DWithSoft;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.List;
 
 import okhttp3.OkHttpClient;
@@ -53,23 +54,24 @@ public class ScanItems extends AppCompatActivity {
     TextView no_cards, status, msg_status;
     EditText barcode;
     Button scan_btn, clear_btn;
-    String username;
+    String username, barcodeCard, barcodePackaging = "";
 
-    List<String> barcodeList = new ArrayList<>(),
-            barcodeListSoFar = new ArrayList<>(),
-            masterCodeList = new ArrayList<>();
+    int order_id, box_quantity, counter = 0, cardScannedCounter = 0;
 
+    List<Card> cardsList = new ArrayList<>();
     List<CardToSet> cardsScannedList = new ArrayList<>();
-
-    int counter = 0, cardScannedCounter = 0;
+    List<MasterBarCode> masterCardsList = new ArrayList<>();
+    HashMap<String, String> cardMap = new HashMap<>(), sellingEANMap = new HashMap<>();
 
     public Barcode2DWithSoft scanner2D;
     private boolean threadStop = true;
     private Thread thread;
 
-    List<Card> cardsList = new ArrayList<>();
-    List<MasterBarCode> masterCardsList = new ArrayList<>();
     private SharedPreferences prefDataConnect;
+
+    private SoundPool soundPool;
+    private int soundIDGreenFlag, soundIDRedFlag;
+    boolean soundLoaded = false;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -78,6 +80,10 @@ public class ScanItems extends AppCompatActivity {
 
         prefDataConnect = getSharedPreferences("login_pref", Context.MODE_PRIVATE);
         username = prefDataConnect.getString("username", "user_name");
+        box_quantity = prefDataConnect.getInt("order_box_quantity", 50);
+        order_id = prefDataConnect.getInt("order_id", 1);
+        Log.i("box_quantity == ", "" + box_quantity);
+        Log.i("order_id == ", "" + order_id);
 
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
@@ -91,9 +97,6 @@ public class ScanItems extends AppCompatActivity {
         status = (TextView) findViewById(R.id.status_et);
         barcode = (EditText) findViewById(R.id.barcode_et);
 
-        new getCardsListTask().execute();
-
-        //Toast.makeText(this, "size : " + cardsList.size() + "\nsize ms : " + masterCardsList.size(), Toast.LENGTH_SHORT).show();
 
         try {
             scanner2D = Barcode2DWithSoft.getInstance();
@@ -114,26 +117,44 @@ public class ScanItems extends AppCompatActivity {
         clear_btn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                no_cards.setText("0");
-                status.setText("");
-                barcode.setText("");
-                scan_btn.setText("SCAN");
-                threadStop = true;
+                clear();
             }
         });
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            AudioAttributes audioAttributes = new AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(AudioAttributes.USAGE_GAME)
+                    .build();
+
+            soundPool = new SoundPool.Builder()
+                    .setMaxStreams(3)
+                    .setAudioAttributes(audioAttributes)
+                    .build();
+            soundIDGreenFlag = soundPool.load(this, R.raw.barcodebeep, 1);
+            soundIDRedFlag = soundPool.load(this, R.raw.serror, 1);
+        } else {
+            soundPool = new SoundPool(10, 3, 5);
+            soundIDGreenFlag = soundPool.load(this, R.raw.barcodebeep, 1);
+            soundIDRedFlag = soundPool.load(this, R.raw.serror, 1);
+        }
+    }
+
+    private void clear() {
+        no_cards.setText("0");
+        msg_status.setText("Scan The Package First");
+        status.setText("");
+        barcode.setText("");
+        scan_btn.setText("SCAN");
+        threadStop = true;
     }
 
     private void scan() {
 
-        if (scanner2D != null) {
-
+        if (scanner2D != null)
             scanner2D.setScanCallback(mScanCallback);
-        }
-
-        Log.i("ErDSoftScanFragment", "doDecode() threadStop=" + threadStop);
 
         if (threadStop) {
-
             int iBetween;
 
             scan_btn.setText("STOP");
@@ -145,20 +166,26 @@ public class ScanItems extends AppCompatActivity {
 
             thread = new DecodeThread(true, iBetween);
             thread.start();
-
         } else {
             scan_btn.setText("SCAN");
             scanner2D.close();
             clear_btn.setEnabled(true);
             threadStop = true;
+            boolean result;
+            if (scanner2D != null) {
+                result = scanner2D.open(ScanItems.this);
+                if (result) {
+                    scanner2D.setParameter(324, 1);
+                    scanner2D.setParameter(300, 0); // Snapshot Aiming
+                    scanner2D.setParameter(361, 0); // Image Capture Illumination
+                }
+            }
         }
-
     }
 
     private class DecodeThread extends Thread {
         private boolean isContinuous;
         private long sleepTime;
-
 
         DecodeThread(boolean isContinuous, int sleep) {
             this.isContinuous = isContinuous;
@@ -170,9 +197,7 @@ public class ScanItems extends AppCompatActivity {
             super.run();
 
             do {
-
                 scanner2D.scan();
-
                 if (isContinuous) {
                     try {
                         Thread.sleep(sleepTime);
@@ -180,16 +205,13 @@ public class ScanItems extends AppCompatActivity {
                         e.printStackTrace();
                     }
                 }
-
             } while (isContinuous && !threadStop);
         }
-
     }
 
     public Barcode2DWithSoft.ScanCallback mScanCallback = new Barcode2DWithSoft.ScanCallback() {
         @Override
         public void onScanComplete(int i, int length, byte[] data) {
-
             if (length < 1) {
                 Toast.makeText(getApplicationContext(), "Scan Failure!", Toast.LENGTH_SHORT).show();
                 return;
@@ -198,67 +220,100 @@ public class ScanItems extends AppCompatActivity {
             scanner2D.stopScan();
 
             String barCode = new String(data);
+            barCode = barCode.trim();
             barcode.setText(barCode);
 
-            counter++;
-            String barcodeCard = "", barcodePackaging;
+            msg_status.setTextColor(Color.rgb(220, 0, 7));      // color == red
+            msg_status.setText("Scan The Package First");
+            status.setText("");
+            /*
+            *   counter == 0  >> Nothing is scanned, package is to be scanned first
+            *   counter == 1  >> Package is scanned, and the card has to be scanned next, when Card is scanned,
+            *                       if found & match counter = 0 and if cardScannedCounter == box_quantity
+            *                       counter = 2 and move to scanning masterCode; otherwise counter = 0
+            *   counter == 2  >>  **** package and card are scanned properly, so masterCode will be scanned,
+            *                       if MasterCode scanned exists, call setCards() and counter = 0, otherwise
+            *                       counter = 2
+            */
 
-            if (counter == 1) {
-                Toast.makeText(ScanItems.this, "Scan The CardToSet..", Toast.LENGTH_SHORT).show();
-                msg_status.setText("Scan The CardToSet..");
-                barcodeCard = barCode;
-            } else if (counter == 2) {
+            if (counter == 0) {
+                msg_status.setText("Package Scanned...Scan The Card");
                 barcodePackaging = barCode;
-                for (int j = 0; j < cardsList.size(); j++) {
-                    if (cardsList.get(j).getPackagingEAN().equals(barcodePackaging))
-                        if (cardsList.get(j).getGiftCardEAN().equals(barcodeCard)) {     // if true, card will be counted
-                            int count = Integer.valueOf(no_cards.getText().toString());
-                            no_cards.setText(String.valueOf((++count)));
-                            Toast.makeText(ScanItems.this, "Perfect!!", Toast.LENGTH_SHORT).show();
-                            status.setTextColor(Color.rgb(30, 204, 0));
-                            status.setText("Perfect");
+                counter++;
+                status.setText("");
+            } else if (counter == 1) {
+                barcodeCard = barCode;
 
-                            CardToSet cardScanned = new CardToSet(
-                                    username,
-                                    new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(Calendar.getInstance().getTime()),
-                                    cardsList.get(j).getSellingEan(),
-                                    cardsList.get(j).getPackagingEAN(),
-                                    cardsList.get(j).getGiftCardEAN(),
-                                    1);
-                            cardsScannedList.add(cardScanned);
+                Log.i("scanned Package == ", barcodePackaging);
+                Log.i("scanned Card == ", barcodeCard);
 
-                            cardScannedCounter++;
-                            counter = 0;
-                            if (cardScannedCounter == 50) {
-                                counter = 3;
-                                msg_status.setTextColor(Color.rgb(40, 123, 255));
-                                msg_status.setText("Scan the MasterCode");
-                            }
+                if (barcodeCard.equals(cardMap.get(barcodePackaging))) {
+                    CardToSet cardScanned = new CardToSet(
+                            username,
+                            new SimpleDateFormat("dd.MM.yyyy HH:mm:ss").format(Calendar.getInstance().getTime()),
+                            sellingEANMap.get(barcodePackaging),
+                            barcodePackaging,
+                            cardMap.get(barcodePackaging),
+                            1);
+                    cardsScannedList.add(cardScanned);
+                    cardScannedCounter++;
+                    counter = 0;
+                    Log.i("status == ", "Perfect, found match");
+                    int count = Integer.valueOf(no_cards.getText().toString());         // increment card scanned count
+                    no_cards.setText(String.valueOf((++count)));                        // set the count to textView
 
-                        } else {
-                            Toast.makeText(ScanItems.this, "Package's and CardToSet's barcode are " +
-                                    " a mismatch..", Toast.LENGTH_SHORT).show();
-                            status.setTextColor(Color.rgb(220, 0, 7));
-                            status.setText("Mismatch");
-                            counter = 0;
-                        }
-                    else {
-                        Toast.makeText(ScanItems.this, "this card doesn't exist!!", Toast.LENGTH_SHORT).show();
-                        status.setTextColor(Color.rgb(220, 0, 7));
-                        status.setText("CardToSet Not Found!!");
-                        counter = 0;
+                    status.setTextColor(Color.rgb(30, 204, 0));             // color == green
+                    status.setText("Perfect");
+                    soundPool.play(soundIDGreenFlag, 0.9f, 0.9f, 1, 0, 1);
+                    // change 2 it to box_quantity
+                    if (cardScannedCounter == 2) {                          // all cards along their package are scanned in one box
+                        counter = 2;                                        // counter = 2 so we can scan master code
+                        msg_status.setTextColor(Color.rgb(17, 187, 255));   // color == blue
+                        msg_status.setText("Scan the MasterCode");
+                    } else {
+                        msg_status.setTextColor(Color.rgb(220, 0, 7));          // color == red
+                        msg_status.setText("Scan another Package..");
                     }
+                } else {
+                    Log.i("status == ", "Package's and Card's barcode are a mismatch..");
+                    status.setTextColor(Color.rgb(220, 0, 7));      // color == red
+                    status.setText("Mismatch");
+                    counter = 0;
+                    soundPool.play(soundIDRedFlag, 0.9f, 0.9f, 1, 0, 1);
                 }
 
-            } else if (counter == 3) {
+
+            } else if (counter == 2) {  // package's and card's code scanned properly, now it's time to scan master code
                 for (int j = 0; j < masterCardsList.size(); j++) {
-                    if (masterCardsList.get(j).getMassActivationEAN().equals(barCode)) {
-                        setCards(new User(new Params("1", masterCardsList.get(j).getMassActivationEAN(), cardsScannedList)));
+                    if (masterCardsList.get(j).getMassActivationEAN().equals(barCode)) {    // masterCode found
+                        Log.i("status == ", "Perfect, Master found match");
+                        Log.i("cardScanned size == ", "" + cardsScannedList.size());
+                        setCards(new Request(new Params(order_id, masterCardsList.get(j).getMassActivationEAN(), cardsScannedList)));
                         counter = 0;
-                    } else {
-                        counter = 3;
-                        // I have nooooo idea
+                        cardScannedCounter = 0;
+                        soundPool.play(soundIDGreenFlag, 0.9f, 0.9f, 1, 0, 1);
+
+                        clear();
+                        scanner2D.close();
+                        clear_btn.setEnabled(true);
+                        boolean result;
+                        if (scanner2D != null) {
+                            result = scanner2D.open(ScanItems.this);
+                            if (result) {
+                                scanner2D.setParameter(324, 1);
+                                scanner2D.setParameter(300, 0); // Snapshot Aiming
+                                scanner2D.setParameter(361, 0); // Image Capture Illumination
+                            }
+                        }
                     }
+                }
+                if (counter == 2) {      // The masterCode scanned doesn't exist
+                    status.setTextColor(Color.rgb(220, 0, 7));          // color == red
+                    status.setText("Master Code Not Found!!");
+                    msg_status.setTextColor(Color.rgb(220, 0, 7));      // color == red
+                    msg_status.setText("Find another valid MasterCode..");
+                    soundPool.play(soundIDRedFlag, 0.9f, 0.9f, 1, 0, 1);
+                    // counter will stay 2 so we can start scanning other master code
                 }
             }
 
@@ -282,6 +337,29 @@ public class ScanItems extends AppCompatActivity {
                     scanner2D.setParameter(361, 0); // Image Capture Illumination
                 }
             }
+
+            Gson gson = new Gson();
+            if (prefDataConnect.contains("cards_list")) {
+                while (cardsList.size() == 0)
+                    cardsList = gson.fromJson(prefDataConnect.getString("cards_list", null), new TypeToken<ArrayList<Card>>() {
+                    }.getType());
+            }
+            if (prefDataConnect.contains("master_cards_list")) {
+                while (masterCardsList.size() == 0)
+                    masterCardsList = gson.fromJson(prefDataConnect.getString("master_cards_list", null), new TypeToken<ArrayList<MasterBarCode>>() {
+                    }.getType());
+            }
+            for (int i = 0; i < cardsList.size(); i++) {
+                cardMap.put(cardsList.get(i).getPackagingEAN(), cardsList.get(i).getGiftCardEAN());
+                sellingEANMap.put(cardsList.get(i).getPackagingEAN(), cardsList.get(i).getSellingEan());
+            }
+            Log.i("post card ms list ==", "size : " + masterCardsList.size());
+            Log.i("post card list ==", "size : " + cardsList.size());
+            Log.i("post hashMap ==", "size : " + cardMap.size());
+            Log.i("post sellingEANMap ==", "size : " + sellingEANMap.size());
+            SharedPreferences.Editor editor = prefDataConnect.edit();
+            editor.apply();
+
             return result;
         }
 
@@ -309,34 +387,9 @@ public class ScanItems extends AppCompatActivity {
 
     }
 
-    private class getCardsListTask extends AsyncTask<String, Integer, Boolean> {
-
-        @Override
-        protected Boolean doInBackground(String... params) {
-            Gson gson = new Gson();
-            if (prefDataConnect.contains("cards_list")) {
-                cardsList = gson.fromJson(prefDataConnect.getString("cards_list", null), new TypeToken<ArrayList<Card>>() {
-                }.getType());
-            }
-            if (prefDataConnect.contains("master_cards_list")) {
-                masterCardsList = gson.fromJson(prefDataConnect.getString("master_cards_list", null), new TypeToken<ArrayList<MasterBarCode>>() {
-                }.getType());
-            }
-            Log.e("post card ms list ==", "size : " + masterCardsList.size());
-            Log.e("post card list ==", "size : " + cardsList.size());
-            SharedPreferences.Editor editor = prefDataConnect.edit();
-            editor.apply();
-
-            return true;
-        }
-
-    }
-
     @Override
     protected void onPause() {
-        // TODO Auto-generated method stub
         super.onPause();
-
 
         threadStop = true;
         scan_btn.setText("SCAN");
@@ -349,12 +402,12 @@ public class ScanItems extends AppCompatActivity {
 
     @Override
     protected void onResume() {
-        // TODO Auto-generated method stub
         super.onResume();
 
         if (scanner2D != null) {
             new InitTask().execute();
         }
+
     }
 
     @Override
@@ -373,15 +426,14 @@ public class ScanItems extends AppCompatActivity {
 
         if ((keyCode == 139))
             if ((event.getRepeatCount() == 0)) {
-                int count = Integer.valueOf(no_cards.getText().toString());
-                no_cards.setText(String.valueOf((++count)));
+                scan();
                 return true;
             }
 
         return super.onKeyDown(keyCode, event);
     }
 
-    void setCards(User user) {
+    void setCards(Request request) {
         OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder();
         HttpLoggingInterceptor login = new HttpLoggingInterceptor();
         login.setLevel(HttpLoggingInterceptor.Level.BODY);
@@ -393,20 +445,22 @@ public class ScanItems extends AppCompatActivity {
                 client(okHttpClientBuilder.build());
 
         Retrofit retrofit = builder.build();
-        UserClient client = retrofit.create(UserClient.class);
-        Call<SetCards> call = client.setCards(user);
+        RequestClient client = retrofit.create(RequestClient.class);
+        Call<SetCards> call = client.setCards(request);
         call.enqueue(new Callback<SetCards>() {
             @Override
             public void onResponse(Call<SetCards> call, Response<SetCards> response) {
                 if (response.body() != null) {
-
-                } else
-                    Toast.makeText(ScanItems.this, "response body is null", Toast.LENGTH_SHORT).show();
+                    Log.i("response msg == ", response.body().getResult().getMsg());
+                    cardsScannedList.clear();
+                } else {
+                    Log.i("response.body() is == ", "null");
+                }
             }
 
             @Override
             public void onFailure(Call<SetCards> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "failed to connect", Toast.LENGTH_SHORT).show();
+                Log.i("sorry == ", "failed to Set");
 
             }
         });

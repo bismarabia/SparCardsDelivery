@@ -3,7 +3,6 @@ package com.bisma.rabia.sparcardsdelivery.login;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.view.View;
@@ -12,8 +11,8 @@ import android.widget.Toast;
 
 import com.bisma.rabia.sparcardsdelivery.R;
 import com.bisma.rabia.sparcardsdelivery.model.request.Params;
-import com.bisma.rabia.sparcardsdelivery.model.request.User;
-import com.bisma.rabia.sparcardsdelivery.model.request.UserClient;
+import com.bisma.rabia.sparcardsdelivery.model.request.Request;
+import com.bisma.rabia.sparcardsdelivery.model.request.RequestClient;
 import com.bisma.rabia.sparcardsdelivery.model.response.connect.ConnectGetOrder;
 import com.bisma.rabia.sparcardsdelivery.model.response.connect.Order;
 import com.bisma.rabia.sparcardsdelivery.orders.OrderRV;
@@ -70,11 +69,11 @@ public class LoginActivity extends AppCompatActivity {
                 addConverterFactory(GsonConverterFactory.create()).
                 client(okHttpClientBuilder.build());
 
-        User user = new User(new Params(username, password));
+        Request request = new Request(new Params(username, password));
 
         Retrofit retrofit = builder.build();
-        UserClient client = retrofit.create(UserClient.class);
-        Call<ConnectGetOrder> call = client.loginUser(user);
+        RequestClient client = retrofit.create(RequestClient.class);
+        Call<ConnectGetOrder> call = client.loginUser(request);
         call.enqueue(new Callback<ConnectGetOrder>() {
 
             @Override

@@ -1,5 +1,5 @@
 
-package com.bisma.rabia.sparcardsdelivery.model.response.setCard;
+package com.bisma.rabia.sparcardsdelivery.model.request;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -14,10 +14,10 @@ public class CardToSet {
     private String time;
     @SerializedName("selling_EAN")
     @Expose
-    private String sellingEAN;
+    private String selling_EAN;
     @SerializedName("EAN_of_packaging")
     @Expose
-    private String eANOfPackaging;
+    private String EAN_of_packaging;
     @SerializedName("card_bar_code")
     @Expose
     private String cardBarCode;
@@ -28,8 +28,8 @@ public class CardToSet {
     public CardToSet(String username, String time, String sellingEAN, String eANOfPackaging, String cardBarCode, Integer cardStatus) {
         this.username = username;
         this.time = time;
-        this.sellingEAN = sellingEAN;
-        this.eANOfPackaging = eANOfPackaging;
+        this.selling_EAN = sellingEAN;
+        this.EAN_of_packaging = eANOfPackaging;
         this.cardBarCode = cardBarCode;
         this.cardStatus = cardStatus;
     }
@@ -50,20 +50,20 @@ public class CardToSet {
         this.time = time;
     }
 
-    public String getSellingEAN() {
-        return sellingEAN;
+    public String getSelling_EAN() {
+        return selling_EAN;
     }
 
-    public void setSellingEAN(String sellingEAN) {
-        this.sellingEAN = sellingEAN;
+    public void setSelling_EAN(String selling_EAN) {
+        this.selling_EAN = selling_EAN;
     }
 
     public String getEANOfPackaging() {
-        return eANOfPackaging;
+        return EAN_of_packaging;
     }
 
     public void setEANOfPackaging(String eANOfPackaging) {
-        this.eANOfPackaging = eANOfPackaging;
+        this.EAN_of_packaging = eANOfPackaging;
     }
 
     public String getCardBarCode() {
