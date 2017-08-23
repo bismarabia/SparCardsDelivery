@@ -3,6 +3,8 @@ package com.bisma.rabia.sparcardsdelivery.orders;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Color;
+import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -38,7 +40,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHolder> {
 
     private static List<Order> ordersList;
-    private Context context;
+    private static Context context;
 
     private List<Card> cardsList;
     private List<MasterBarCode> masterCardsList;
@@ -61,12 +63,6 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
             orderFinishDate = (TextView) itemView.findViewById(R.id.order_finish_time);
             orderCategory = (TextView) itemView.findViewById(R.id.order_category);
             task_status = (ImageView) itemView.findViewById(R.id.task_status);
-            itemView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View view) {
-                    view.getContext().startActivity(new Intent(view.getContext(), ScanItems.class));
-                }
-            });
         }
 
 
@@ -99,8 +95,11 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
 
         if (ordersList.get(position).getCompleted() == 0) {
             foodViewHolder.task_status.setImageResource(R.drawable.in_progress1);
-        } else
+        } else {
             foodViewHolder.task_status.setImageResource(R.drawable.order_done);
+            foodViewHolder.itemView.setEnabled(false);
+            foodViewHolder.order_cv.setCardBackgroundColor(Color.rgb(235, 235, 228));
+        }
 
         foodViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -109,6 +108,7 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
                 getMasterCards(String.valueOf(ordersList.get(foodViewHolder.getAdapterPosition()).getId()));
                 foodViewHolder.itemView.getContext().startActivity(new Intent(
                         foodViewHolder.itemView.getContext(), ScanItems.class));
+                ((AppCompatActivity) foodViewHolder.itemView.getContext()).finish();
                 SharedPreferences.Editor editor = prefDataConnect.edit();
                 editor.putInt("order_id", ordersList.get(foodViewHolder.getAdapterPosition()).getId());
                 editor.putInt("order_box_quantity", ordersList.get(foodViewHolder.getAdapterPosition()).getBox_quantity());
@@ -120,7 +120,8 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
 
     @Override
     public int getItemCount() {
-        return ordersList != null ? ordersList.size() : 0;
+        return ordersList.size();
+        //return ordersList != null ? ordersList.size() : 0;
     }
 
     private RequestClient getClient() {

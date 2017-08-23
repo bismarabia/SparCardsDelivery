@@ -8,9 +8,9 @@ public class Result {
     @SerializedName("msg")
     @Expose
     private String msg;
-    @SerializedName("cards_duplicated")
+    @SerializedName("duplicated:")
     @Expose
-    private String[] cards_duplicated;
+    private Duplicated duplicated;
     @SerializedName("status")
     @Expose
     private Integer status;
@@ -31,11 +31,11 @@ public class Result {
         this.status = status;
     }
 
-    public String[] getCards_duplicated() {
-        return cards_duplicated;
+    public Duplicated getDuplicated() {
+        return duplicated;
     }
 
-    public void setCards_duplicated(String[] cards_duplicated) {
-        this.cards_duplicated = cards_duplicated;
+    public void setDuplicated(Duplicated duplicated) {
+        this.duplicated = duplicated;
     }
 }
