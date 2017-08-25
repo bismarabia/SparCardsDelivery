@@ -11,6 +11,7 @@ import android.provider.Settings;
 import android.support.design.widget.Snackbar;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
 import android.view.View;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -19,10 +20,11 @@ import com.bisma.rabia.sparcardsdelivery.R;
 import com.bisma.rabia.sparcardsdelivery.model.request.Params;
 import com.bisma.rabia.sparcardsdelivery.model.request.Request;
 import com.bisma.rabia.sparcardsdelivery.model.request.RequestClient;
+import com.bisma.rabia.sparcardsdelivery.model.response.cards.GetCards;
 import com.bisma.rabia.sparcardsdelivery.model.response.connect.ConnectGetOrder;
 import com.bisma.rabia.sparcardsdelivery.model.response.connect.Order;
+import com.bisma.rabia.sparcardsdelivery.model.response.masetCards.GetMasterBarCodes;
 import com.bisma.rabia.sparcardsdelivery.orders.OrderRV;
-import com.bisma.rabia.sparcardsdelivery.scan.ScanItems;
 import com.google.gson.Gson;
 
 import java.util.List;
@@ -65,6 +67,8 @@ public class LoginActivity extends AppCompatActivity {
                     username = username_tv.getText().toString();
                     password = password_tv.getText().toString();
                     connect(username, password);
+//                    getCards("1");
+//                    getMasterCards("1");
                 } else {
                     showLocationDialog();
                 }
@@ -161,6 +165,70 @@ public class LoginActivity extends AppCompatActivity {
         dialog.show();
     }
 
+    private RequestClient getClient() {
+        OkHttpClient.Builder okHttpClientBuilder = new OkHttpClient.Builder();
+        HttpLoggingInterceptor login = new HttpLoggingInterceptor();
+        login.setLevel(HttpLoggingInterceptor.Level.HEADERS);
+        okHttpClientBuilder.addInterceptor(login);
+
+        Retrofit.Builder builder = new Retrofit.Builder().
+                baseUrl("http://spar.identiks.webfactional.com/").
+                addConverterFactory(GsonConverterFactory.create()).
+                client(okHttpClientBuilder.build());
+
+        Retrofit retrofit = builder.build();
+        return retrofit.create(RequestClient.class);
+    }
+
+    private void getCards(String id) {
+        RequestClient client = getClient();
+
+        Request request = new Request(new Params(id));
+
+        Call<GetCards> call = client.getCards(request);
+        call.enqueue(new Callback<GetCards>() {
+            @Override
+            public void onResponse(Call<GetCards> call, Response<GetCards> response) {
+                if (response.body() != null) {
+                    Log.i("cards response body ==", " is not null");
+                } else {
+                    Log.i("cards response body ==", " is null");
+                }
+            }
+
+            @Override
+            public void onFailure(Call<GetCards> call, Throwable t) {
+                Log.i("cards failed to ==", " connect");
+            }
+        });
+
+
+    }
+
+    private void getMasterCards(String id) {
+
+        Request request = new Request(new Params(id));
+        RequestClient client = getClient();
+
+        Call<GetMasterBarCodes> call = client.getMasterCards(request);
+        call.enqueue(new Callback<GetMasterBarCodes>() {
+            @Override
+            public void onResponse(Call<GetMasterBarCodes> call, Response<GetMasterBarCodes> response) {
+                if (response.body() != null) {
+                    Log.i("ms cards response ==", " body is not null");
+                } else
+                    Log.i("ms cards response ==", " body is null");
+
+            }
+
+            @Override
+            public void onFailure(Call<GetMasterBarCodes> call, Throwable t) {
+                Log.i("ms cards failed to ==", " connect");
+            }
+
+        });
+
+    }
 
     @Override
     public void onBackPressed() {

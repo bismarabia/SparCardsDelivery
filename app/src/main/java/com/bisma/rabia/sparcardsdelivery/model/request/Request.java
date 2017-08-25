@@ -8,7 +8,7 @@ public class Request {
 
     @SerializedName("params")
     @Expose
-    Params params;
+    private Params params;
 
     public Request(Params params) {
         this.params = params;

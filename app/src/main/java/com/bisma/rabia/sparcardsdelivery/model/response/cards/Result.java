@@ -13,6 +13,7 @@ public class Result {
     @Expose
     private String msg;
 
+
     public Integer getStatus() {
         return status;
     }

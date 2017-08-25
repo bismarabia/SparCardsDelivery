@@ -11,11 +11,9 @@ public class GetCards {
     @SerializedName("result")
     @Expose
     private Result result;
-
     @SerializedName("cards")
     @Expose
     private List<Card> cards = null;
-
     @SerializedName("error")
     @Expose
     private String error;

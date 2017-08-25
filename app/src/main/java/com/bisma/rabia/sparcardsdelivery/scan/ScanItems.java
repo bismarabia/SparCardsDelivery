@@ -35,8 +35,10 @@ import com.bisma.rabia.sparcardsdelivery.model.response.masetCards.MasterBarCode
 import com.bisma.rabia.sparcardsdelivery.model.response.setCard.SetCards;
 import com.bisma.rabia.sparcardsdelivery.orders.OrderRV;
 import com.google.gson.Gson;
+import com.google.gson.internal.Streams;
 import com.google.gson.reflect.TypeToken;
 import com.rscja.deviceapi.Barcode1D;
+import com.rscja.deviceapi.RFIDWithUHF;
 import com.rscja.deviceapi.exception.ConfigurationException;
 import com.zebra.adc.decoder.Barcode2DWithSoft;
 
@@ -59,7 +61,7 @@ import retrofit2.converter.gson.GsonConverterFactory;
 public class ScanItems extends AppCompatActivity {
 
     TextView no_cards, status, msg_status;
-    EditText barcode;
+    static EditText barcode;
     Button scan_btn, clear_btn;
     String username, barcodeCard, barcodePackaging = "";
 
@@ -70,9 +72,8 @@ public class ScanItems extends AppCompatActivity {
     List<MasterBarCode> masterCardsList = new ArrayList<>();
     HashMap<String, String> cardMap = new HashMap<>(), sellingEANMap = new HashMap<>();
 
-    static boolean isBarcode1D = false, isBarcode2D = false;
+    static boolean isBarcode1D = true, isBarcode2D = false;
     public Barcode2DWithSoft scanner2D;
-    private ExecutorService executor;
     private boolean threadStop = true;
     private Thread thread;
 
@@ -82,6 +83,8 @@ public class ScanItems extends AppCompatActivity {
     private int soundIDGreenFlag, soundIDRedFlag;
     private Barcode1D mInstance;
     private String barCode1D;
+    private Boolean isUHF;
+    private RFIDWithUHF mReader;
 
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
@@ -92,6 +95,7 @@ public class ScanItems extends AppCompatActivity {
     }
 
     private void init() {
+
         prefDataConnect = getSharedPreferences("login_pref", Context.MODE_PRIVATE);
         username = prefDataConnect.getString("username", "user_name");
         box_quantity = prefDataConnect.getInt("order_box_quantity", 50);
@@ -106,32 +110,12 @@ public class ScanItems extends AppCompatActivity {
             actionBar.setTitle("SCAN ITEMS");
         }
 
+        new InitTask().execute();
+
         no_cards = (TextView) findViewById(R.id.no_cards_et);
         msg_status = (TextView) findViewById(R.id.msg_status);
         status = (TextView) findViewById(R.id.status_et);
         barcode = (EditText) findViewById(R.id.barcode_et);
-
-        isBarcode1D = prefDataConnect.getBoolean("isBarcode1D", false);
-        isBarcode2D = prefDataConnect.getBoolean("isBarcode2D", false);
-
-        if (isBarcode2D) {
-            try {
-                scanner2D = Barcode2DWithSoft.getInstance();
-            } catch (Exception e) {
-                Toast.makeText(getApplicationContext(), e.getMessage(), Toast.LENGTH_SHORT).show();
-            }
-            isBarcode2D = scanner2D.open(ScanItems.this);
-            Log.i("isBarcode2D == ", "" + isBarcode2D);
-        } else if (isBarcode1D) {
-            try {
-                mInstance = Barcode1D.getInstance();
-            } catch (ConfigurationException e) {
-                Log.i("1D exp == ", e.getMessage());
-            }
-            isBarcode1D = mInstance.open();
-            Log.i("isBarcode1D == ", "" + isBarcode1D);
-        }
-
 
         scan_btn = (Button) findViewById(R.id.scan_btn);
         scan_btn.setOnClickListener(new View.OnClickListener() {
@@ -170,26 +154,22 @@ public class ScanItems extends AppCompatActivity {
 
     private void scan() {
 
-        if (isBarcode2D) {
-            Log.i("2D Scanner == ", "will be used");
-            if (scanner2D != null)
-                scanner2D.setScanCallback(mScanCallback);
+        if (threadStop) {
 
-            if (threadStop) {
+            scan_btn.setText("STOP");
+            threadStop = false;
 
-                scan_btn.setText("STOP");
-                threadStop = false;
+            clear_btn.setEnabled(false);
 
-                clear_btn.setEnabled(false);
-
-                thread = new DecodeThread(true, 1500);
-                thread.start();
-            } else {
-                scan_btn.setText("SCAN");
+            thread = new DecodeThread(true, 1500);
+            thread.start();
+        } else {
+            scan_btn.setText("SCAN");
+            clear_btn.setEnabled(true);
+            threadStop = true;
+            boolean result;
+            if (isBarcode2D) {
                 scanner2D.close();
-                clear_btn.setEnabled(true);
-                threadStop = true;
-                boolean result;
                 if (scanner2D != null) {
                     result = scanner2D.open(ScanItems.this);
                     if (result) {
@@ -199,11 +179,7 @@ public class ScanItems extends AppCompatActivity {
                     }
                 }
             }
-        } else {
-            Log.i("1D Scanner == ", "will be used");
-            String b = mInstance.scan();
-            Log.i("1D **** == ", b);
-            updateUI(b);
+
         }
     }
 
@@ -227,24 +203,29 @@ public class ScanItems extends AppCompatActivity {
 
         @Override
         public void run() {
-            super.run();
 
-            do {
-                if (isBarcode2D) {
-                    scanner2D.scan();
-                } else {
-                    barCode1D = mInstance.scan();
-                    updateUI(barCode1D);
-                }
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    do {
+                        if (isBarcode2D) {
+                            scanner2D.scan();
+                        } else {
+                            barCode1D = mInstance.scan();
+                            updateUI(barCode1D);
+                        }
 
-                if (isContinuous) {
-                    try {
-                        Thread.sleep(sleepTime);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
+                        if (isContinuous) {
+                            try {
+                                Thread.sleep(sleepTime);
+                            } catch (InterruptedException e) {
+                                e.printStackTrace();
+                            }
+                        }
+                    } while (isContinuous && !threadStop);
                 }
-            } while (isContinuous && !threadStop);
+            });
+
         }
     }
 
@@ -264,7 +245,7 @@ public class ScanItems extends AppCompatActivity {
     };
 
     void updateUI(String barCode) {
-        barcode.setText(barCode);
+        ScanItems.barcode.setText(barCode);
         Log.i("1D **** == ", barCode);
 
         msg_status.setTextColor(Color.rgb(220, 0, 7));      // color == red
@@ -333,7 +314,7 @@ public class ScanItems extends AppCompatActivity {
                 if (masterCardsList.get(j).getMassActivationEAN().equals(barCode)) {    // masterCode found
                     Log.i("status == ", "Perfect, Master found match");
                     Log.i("cardScanned size == ", "" + cardsScannedList.size());
-                    setCards(new Request(new Params(order_id, masterCardsList.get(j).getMassActivationEAN(), cardsScannedList)));
+                    setCards(new Request(new Params(String.valueOf(order_id), masterCardsList.get(j).getMassActivationEAN(), cardsScannedList)));
                     counter = 0;
                     cardScannedCounter = 0;
                     soundPool.play(soundIDGreenFlag, 0.9f, 0.9f, 1, 0, 1);
@@ -363,60 +344,36 @@ public class ScanItems extends AppCompatActivity {
         }
     }
 
-    public class InitTask1D extends AsyncTask<String, Integer, Boolean> {
-        ProgressDialog mypDialog;
 
-        @Override
-        protected Boolean doInBackground(String... params) {
-            return mInstance.open();
-        }
-
-        @Override
-        protected void onPostExecute(Boolean result) {
-            super.onPostExecute(result);
-            mypDialog.cancel();
-
-            if (!result) {
-                Toast.makeText(ScanItems.this, "init fail",
-                        Toast.LENGTH_SHORT).show();
-            }
-        }
-
-        @Override
-        protected void onPreExecute() {
-            super.onPreExecute();
-
-            mypDialog = new ProgressDialog(ScanItems.this);
-            mypDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            mypDialog.setMessage("init 1D...");
-            mypDialog.setCanceledOnTouchOutside(false);
-            mypDialog.show();
-        }
-
-    }
-
-
-    private class InitTask2D extends AsyncTask<String, Integer, Boolean> {
+    private class InitTask extends AsyncTask<String, Integer, Boolean> {
         ProgressDialog mypDialog;
 
         @Override
         protected Boolean doInBackground(String... params) {
 
-            boolean result = false;
-
-            if (scanner2D != null) {
-                result = scanner2D.open(ScanItems.this);
-                if (result) {
-                    scanner2D.setParameter(324, 1);
-                    scanner2D.setParameter(300, 0); // Snapshot Aiming
-                    scanner2D.setParameter(361, 0); // Image Capture Illumination
-                }
+            // initiate barcode2D instance
+            try {
+                scanner2D = Barcode2DWithSoft.getInstance();
+            } catch (Exception e) {
+                Toast.makeText(getApplicationContext(), "Error " + e.getMessage(), Toast.LENGTH_SHORT).show();
             }
+            isBarcode2D = scanner2D.open(ScanItems.this);
 
-            if (mInstance != null) {
-                if (mInstance.open()) {
-                    result = mInstance.open();
+            if (!isBarcode2D) {
+                Log.i("1D Scanner == ", "will be used");
+                scanner2D.close();
+                scanner2D = null;
+                try {
+                    mInstance = Barcode1D.getInstance();
+                } catch (ConfigurationException e) {
+                    e.printStackTrace();
                 }
+                isBarcode1D = mInstance.open();
+            } else {
+                Log.i("2D Scanner == ", "will be used");
+                scanner2D.setParameter(324, 1);
+                scanner2D.setParameter(300, 0); // Snapshot Aiming
+                scanner2D.setParameter(361, 0); // Image Capture Illumination
             }
 
             Gson gson = new Gson();
@@ -441,7 +398,7 @@ public class ScanItems extends AppCompatActivity {
             SharedPreferences.Editor editor = prefDataConnect.edit();
             editor.apply();
 
-            return result;
+            return true;
         }
 
         @Override
@@ -461,7 +418,7 @@ public class ScanItems extends AppCompatActivity {
 
             mypDialog = new ProgressDialog(ScanItems.this);
             mypDialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
-            mypDialog.setMessage("init...");
+            mypDialog.setMessage("init scanners...");
             mypDialog.setCanceledOnTouchOutside(false);
             mypDialog.show();
         }
@@ -473,7 +430,6 @@ public class ScanItems extends AppCompatActivity {
         super.onPause();
 
         threadStop = true;
-        executor.shutdownNow();
         scan_btn.setText("SCAN");
         clear_btn.setEnabled(true);
 
@@ -486,11 +442,8 @@ public class ScanItems extends AppCompatActivity {
     protected void onResume() {
         super.onResume();
 
-        if (scanner2D != null && isBarcode2D) {
-            new InitTask2D().execute();
-        }
-
-        new InitTask1D().execute();
+        new InitTask().execute();
+        //new InitTask1D().execute();
 
     }
 

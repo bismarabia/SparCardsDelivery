@@ -16,9 +16,11 @@ public interface RequestClient {
     @POST("/connect/")
     Call<ConnectGetOrder> loginUser(@Body Request request);
 
+    @Headers("Accept:application/json")
     @POST("/getMasterCodes/")
     Call<GetMasterBarCodes> getMasterCards(@Body Request request);
 
+    @Headers("Accept:application/json")
     @POST("/getCards/")
     Call<GetCards> getCards(@Body Request request);
 

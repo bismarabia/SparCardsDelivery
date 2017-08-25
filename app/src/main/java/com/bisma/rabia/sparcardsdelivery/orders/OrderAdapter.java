@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Color;
-import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.CardView;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -20,10 +19,10 @@ import com.bisma.rabia.sparcardsdelivery.model.request.Request;
 import com.bisma.rabia.sparcardsdelivery.model.request.RequestClient;
 import com.bisma.rabia.sparcardsdelivery.model.response.cards.Card;
 import com.bisma.rabia.sparcardsdelivery.model.response.cards.GetCards;
+import com.bisma.rabia.sparcardsdelivery.model.response.connect.Order;
 import com.bisma.rabia.sparcardsdelivery.model.response.masetCards.GetMasterBarCodes;
 import com.bisma.rabia.sparcardsdelivery.model.response.masetCards.MasterBarCode;
 import com.bisma.rabia.sparcardsdelivery.scan.ScanItems;
-import com.bisma.rabia.sparcardsdelivery.model.response.connect.Order;
 import com.google.gson.Gson;
 
 import java.util.List;
@@ -86,32 +85,32 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
     }
 
     @Override
-    public void onBindViewHolder(final FoodViewHolder foodViewHolder, int position) {
-        foodViewHolder.orderName.setText(ordersList.get(position).getName());
-        foodViewHolder.orderQuantity.setText("Quantity: " + ordersList.get(position).getQuantity());
-        foodViewHolder.orderCategory.setText(ordersList.get(position).getCategory() + "€");
-        foodViewHolder.orderStartDate.setText("Starting time:  " + ordersList.get(position).getStart());
-        foodViewHolder.orderFinishDate.setText("Ending time: " + ordersList.get(position).getEnd());
+    public void onBindViewHolder(final FoodViewHolder viewHolder, final int position) {
+        viewHolder.orderName.setText(ordersList.get(position).getName());
+        viewHolder.orderQuantity.setText("Quantity: " + ordersList.get(position).getQuantity());
+        viewHolder.orderCategory.setText(ordersList.get(position).getCategory() + "€");
+        viewHolder.orderStartDate.setText("Starting time:  " + ordersList.get(position).getStart());
+        viewHolder.orderFinishDate.setText("Ending time: " + ordersList.get(position).getEnd());
 
         if (ordersList.get(position).getCompleted() == 0) {
-            foodViewHolder.task_status.setImageResource(R.drawable.in_progress1);
+            viewHolder.task_status.setImageResource(R.drawable.in_progress1);
         } else {
-            foodViewHolder.task_status.setImageResource(R.drawable.order_done);
-            foodViewHolder.itemView.setEnabled(false);
-            foodViewHolder.order_cv.setCardBackgroundColor(Color.rgb(235, 235, 228));
+            viewHolder.task_status.setImageResource(R.drawable.order_done);
+            viewHolder.itemView.setEnabled(false);
+            viewHolder.order_cv.setCardBackgroundColor(Color.rgb(235, 235, 228));
         }
 
-        foodViewHolder.itemView.setOnClickListener(new View.OnClickListener() {
+        viewHolder.itemView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                getCards(String.valueOf(ordersList.get(foodViewHolder.getAdapterPosition()).getId()));
-                getMasterCards(String.valueOf(ordersList.get(foodViewHolder.getAdapterPosition()).getId()));
-                foodViewHolder.itemView.getContext().startActivity(new Intent(
-                        foodViewHolder.itemView.getContext(), ScanItems.class));
-                ((AppCompatActivity) foodViewHolder.itemView.getContext()).finish();
+                getCards(String.valueOf(ordersList.get(position).getId()));
+                getMasterCards(String.valueOf(ordersList.get(position).getId()));
+                viewHolder.itemView.getContext().startActivity(new Intent(
+                        viewHolder.itemView.getContext(), ScanItems.class));
+                //((AppCompatActivity) viewHolder.itemView.getContext()).finish();
                 SharedPreferences.Editor editor = prefDataConnect.edit();
-                editor.putInt("order_id", ordersList.get(foodViewHolder.getAdapterPosition()).getId());
-                editor.putInt("order_box_quantity", ordersList.get(foodViewHolder.getAdapterPosition()).getBox_quantity());
+                editor.putInt("order_id", ordersList.get(viewHolder.getAdapterPosition()).getId());
+                editor.putInt("order_box_quantity", ordersList.get(viewHolder.getAdapterPosition()).getBox_quantity());
                 editor.apply();
             }
         });
@@ -140,8 +139,9 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
     }
 
     private void getCards(String id) {
-        Request request = new Request(new Params(id));
         RequestClient client = getClient();
+
+        Request request = new Request(new Params(id));
 
         Call<GetCards> call = client.getCards(request);
         call.enqueue(new Callback<GetCards>() {
@@ -154,12 +154,14 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
                     SharedPreferences.Editor editor = prefDataConnect.edit();
                     editor.putString("cards_list", gson.toJson(cardsList));
                     editor.apply();
+                } else {
+                    Log.i("cards response body ==", " is null");
                 }
             }
 
             @Override
             public void onFailure(Call<GetCards> call, Throwable t) {
-
+                Log.i("cards failed to ==", " connect");
             }
         });
 
@@ -182,13 +184,14 @@ public class OrderAdapter extends RecyclerView.Adapter<OrderAdapter.FoodViewHold
                     SharedPreferences.Editor editor = prefDataConnect.edit();
                     editor.putString("master_cards_list", gson.toJson(masterCardsList));
                     editor.apply();
-                }
+                } else
+                    Log.i("ms cards response ==", " body is null");
 
             }
 
             @Override
             public void onFailure(Call<GetMasterBarCodes> call, Throwable t) {
-
+                Log.i("ms cards failed to ==", " connect");
             }
 
         });

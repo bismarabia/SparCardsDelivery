@@ -6,27 +6,27 @@ import com.google.gson.annotations.SerializedName;
 
 public class Card {
 
-    @SerializedName("gift_card_EAN")
-    @Expose
-    private String giftCardEAN;
     @SerializedName("card_bar_code")
     @Expose
     private String cardBarCode;
     @SerializedName("packaging_bar_code")
     @Expose
     private String packagingBarCode;
-    @SerializedName("selling_ean")
-    @Expose
-    private String sellingEan;
     @SerializedName("packaging_EAN")
     @Expose
     private String packagingEAN;
-    @SerializedName("card_packaging_relation")
+    @SerializedName("gift_card_EAN")
     @Expose
-    private String cardPackagingRelation;
+    private String giftCardEAN;
+    @SerializedName("selling_ean")
+    @Expose
+    private String sellingEan;
     @SerializedName("pin")
     @Expose
     private String pin;
+    @SerializedName("card_packaging_relation")
+    @Expose
+    private String cardPackagingRelation;
 
     public String getGiftCardEAN() {
         return giftCardEAN;

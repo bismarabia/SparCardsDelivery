@@ -7,16 +7,18 @@ import com.google.gson.annotations.SerializedName;
 import java.util.List;
 
 public class Params {
-    String username, password, auth, idd;
+    @SerializedName("username")
+    @Expose
+    private String username;
+    @SerializedName("password")
+    @Expose
+    private String password;
 
     @SerializedName("id")
     @Expose
-    private int id;
-    @SerializedName("EAN_for_mass_activation")
-    @Expose
+    private String id;
+
     private String eANForMassActivation;
-    @SerializedName("cards")
-    @Expose
     List<CardToSet> cardToSets;
 
     public Params(String username, String password) {
@@ -25,10 +27,10 @@ public class Params {
     }
 
     public Params(String id) {
-        this.idd = id;
+        this.id = id;
     }
 
-    public Params(int id, String EAN_masterCode, List<CardToSet> cardToSets) {
+    public Params(String id, String EAN_masterCode, List<CardToSet> cardToSets) {
         this.id = id;
         this.eANForMassActivation = EAN_masterCode;
         this.cardToSets = cardToSets;
